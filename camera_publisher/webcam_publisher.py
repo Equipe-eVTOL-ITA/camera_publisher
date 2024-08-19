@@ -7,7 +7,7 @@ import cv2
 class WebcamPublisher(Node):
     def __init__(self):
         super().__init__('webcam_publisher')
-        self.publisher_ = self.create_publisher(CompressedImage, 'webcam/image/compressed', 10)
+        self.publisher_ = self.create_publisher(CompressedImage, 'camera/image/compressed', 10)
         self.timer = self.create_timer(0.1, self.timer_callback)
         self.bridge = CvBridge()
         self.cap = cv2.VideoCapture(0)  # Use a webcam (normalmente index 0)
