@@ -1,6 +1,6 @@
 from setuptools import setup
 
-package_name = 'raspicam_publisher'
+package_name = 'camera_publisher'
 
 setup(
     name=package_name,
@@ -10,12 +10,12 @@ setup(
     zip_safe=True,
     maintainer='Your Name',
     maintainer_email='your.email@example.com',
-    description='ROS2 package for publishing images from RaspCam',
+    description='Package to publish camera images using ROS2.',
     license='Apache License 2.0',
-    tests_require=['pytest'],
     entry_points={
         'console_scripts': [
-            'camera_publisher = raspicam_publisher.camera_publisher:main',
+            'raspicam = camera_publisher.raspicam_publisher:main',
+            'webcam = camera_publisher.webcam_publisher:main',
         ],
     },
 )
