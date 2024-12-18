@@ -19,7 +19,7 @@ class OakRGBPublisher(Node):
         self.cam_rgb = self.pipeline.createColorCamera()
         self.cam_rgb.setPreviewSize(640, 480)
         self.cam_rgb.setInterleaved(False)
-        self.cam_rgb.setBoardSocket(dai.CameraBoardSocket.RGB)
+        self.cam_rgb.setBoardSocket(dai.CameraBoardSocket.CAM_A)
 
         # Link the RGB output to XLink
         self.xout_rgb = self.pipeline.createXLinkOut()
