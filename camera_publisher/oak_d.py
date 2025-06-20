@@ -8,7 +8,7 @@ import cv2
 class OakRGBPublisher(Node):
     def __init__(self):
         super().__init__('oak_rgb_publisher')
-        self.publisher_ = self.create_publisher(CompressedImage, 'camera/image/compressed', 10)
+        self.publisher_ = self.create_publisher(CompressedImage, 'camera/compressed', 10)
         self.timer = self.create_timer(0.1, self.timer_callback)  # Publish at 10 Hz
         self.bridge = CvBridge()
 
@@ -17,7 +17,7 @@ class OakRGBPublisher(Node):
 
         # Define OAK-D RGB camera source
         self.cam_rgb = self.pipeline.createColorCamera()
-        self.cam_rgb.setPreviewSize(640, 480)
+        self.cam_rgb.setPreviewSize(800, 800)
         self.cam_rgb.setInterleaved(False)
         self.cam_rgb.setBoardSocket(dai.CameraBoardSocket.CAM_A)
 
