@@ -21,6 +21,9 @@ class OakRGBPublisher(Node):
         self.cam_rgb.setInterleaved(False)
         self.cam_rgb.setBoardSocket(dai.CameraBoardSocket.CAM_A)
 
+        self.cam_rgb.initialControl.setAutoExposureEnable()
+        self.cam_rgb.initialControl.setAutoExposureCompensation(4)  # -4 to +
+
         # Link the RGB output to XLink
         self.xout_rgb = self.pipeline.createXLinkOut()
         self.xout_rgb.setStreamName("rgb")
