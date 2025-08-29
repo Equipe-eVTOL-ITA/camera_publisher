@@ -1,16 +1,16 @@
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import CompressedImage
+from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2
 
 class WebcamPublisher(Node):
     def __init__(self):
         super().__init__('webcam_publisher')
-        self.publisher_ = self.create_publisher(CompressedImage, 'camera/compressed', 10)
+        self.publisher_ = self.create_publisher(Image, 'vertical_camera', 10)
         self.timer = self.create_timer(0.1, self.timer_callback)
         self.bridge = CvBridge()
-        self.cap = cv2.VideoCapture('/dev/video3', cv2.CAP_V4L)
+        self.cap = cv2.VideoCapture('/dev/video0', cv2.CAP_V4L)
 
     def timer_callback(self):
         ret, frame = self.cap.read()
@@ -30,8 +30,8 @@ class WebcamPublisher(Node):
             
             # Resize to 800x800
             frame_resized = cv2.resize(frame_cropped, (800, 800))
-            
-            msg = self.bridge.cv2_to_compressed_imgmsg(frame_resized)
+
+            msg = self.bridge.cv2_to_imgmsg(frame_resized, encoding="bgr8")
             msg.header.stamp = self.get_clock().now().to_msg()
             msg.header.frame_id = "camera_frame"
             
