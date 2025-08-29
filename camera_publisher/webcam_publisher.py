@@ -10,7 +10,7 @@ class WebcamPublisher(Node):
         self.publisher_ = self.create_publisher(CompressedImage, 'camera/compressed', 10)
         self.timer = self.create_timer(0.1, self.timer_callback)
         self.bridge = CvBridge()
-        self.cap = cv2.VideoCapture(0)  # Use a webcam (normalmente index 0)
+        self.cap = cv2.VideoCapture('/dev/video3', cv2.CAP_V4L)
 
     def timer_callback(self):
         ret, frame = self.cap.read()
