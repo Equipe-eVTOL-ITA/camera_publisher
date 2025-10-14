@@ -1,5 +1,6 @@
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
 from sensor_msgs.msg import CompressedImage, Image
 from cv_bridge import CvBridge
 import depthai as dai
@@ -35,12 +36,19 @@ class OakRGBPublisher(Node):
         self.fps = int(fps_param) if fps_param is not None else 20
         self.auto_exposure_compensation = int(exp_param) if exp_param is not None else 4
         
+        # QoS profile for image publishing (BEST_EFFORT for low latency)
+        qos_profile = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.VOLATILE,
+            depth=10,
+        )
+        
         # Create publishers based on parameters
         if self.publish_raw:
-            self.raw_publisher = self.create_publisher(Image, 'camera/image/raw', 10)
+            self.raw_publisher = self.create_publisher(Image, 'camera/image/raw', qos_profile)
         
         if self.publish_compressed:
-            self.compressed_publisher = self.create_publisher(CompressedImage, 'camera/image/compressed', 10)
+            self.compressed_publisher = self.create_publisher(CompressedImage, 'camera/image/compressed', qos_profile)
             
         # Timer frequency based on FPS parameter
         timer_period = 1.0 / float(self.fps)

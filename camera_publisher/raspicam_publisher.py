@@ -1,16 +1,37 @@
 import rclpy
 from rclpy.node import Node
-from sensor_msgs.msg import CompressedImage
+from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
+from sensor_msgs.msg import CompressedImage, Image
 from cv_bridge import CvBridge
 import cv2
 
 class CameraPublisher(Node):
     def __init__(self):
         super().__init__('camera_publisher')
-        self.publisher_ = self.create_publisher(CompressedImage, 'camera/compressed', 10)
+        
+        # Declare parameters
+        self.declare_parameter('use_compressed', False)  # False = raw, True = compressed
+        
+        # Get parameters
+        self.use_compressed = self.get_parameter('use_compressed').value
+        
+        qos_profile = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.VOLATILE,
+            depth=10,
+        )
+        
+        # Create publisher based on parameter
+        if self.use_compressed:
+            self.publisher_ = self.create_publisher(CompressedImage, 'vertical_camera/image/compressed', qos_profile)
+            self.get_logger().info(f"Publishing COMPRESSED images to: vertical_camera/image/compressed")
+        else:
+            self.publisher_ = self.create_publisher(Image, 'vertical_camera/image/raw', qos_profile)
+            self.get_logger().info(f"Publishing RAW images to: vertical_camera/image/raw")
+        
         self.timer = self.create_timer(0.1, self.timer_callback)
         self.bridge = CvBridge()
-        self.cap = cv2.VideoCapture('/dev/video2', cv2.CAP_V4L)
+        self.cap = cv2.VideoCapture('/dev/video3', cv2.CAP_V4L)
 
     def timer_callback(self):
         ret, frame = self.cap.read()
@@ -31,7 +52,12 @@ class CameraPublisher(Node):
             # Resize to 800x800
             frame_resized = cv2.resize(frame_cropped, (800, 800))
 
-            msg = self.bridge.cv2_to_compressed_imgmsg(frame_resized)
+            # Convert based on parameter
+            if self.use_compressed:
+                msg = self.bridge.cv2_to_compressed_imgmsg(frame_resized)
+            else:
+                msg = self.bridge.cv2_to_imgmsg(frame_resized, encoding='bgr8')
+            
             msg.header.stamp = self.get_clock().now().to_msg()
             msg.header.frame_id = "camera_frame"
             
