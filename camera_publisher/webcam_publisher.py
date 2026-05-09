@@ -10,12 +10,12 @@ class WebcamPublisher(Node):
         super().__init__('webcam_publisher')
         
         # Declare parameters
+        self.declare_parameter('camera_name', 'vertical')  # e.g., 'vertical', 'horizontal'
         self.declare_parameter('use_compressed', True)  # False = raw, True = compressed
-        self.declare_parameter('topic_name', '/vertical_camera/image_raw')
         
         # Get parameters
+        camera_name = self.get_parameter('camera_name').value
         self.use_compressed = self.get_parameter('use_compressed').value
-        base_topic = self.get_parameter('topic_name').value
         
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -23,13 +23,13 @@ class WebcamPublisher(Node):
             depth=10,
         )
         
-        # Create publisher based on parameter
+        # Create publisher based on parameters
         if self.use_compressed:
-            topic_name = 'vertical_camera/image/compressed'
+            topic_name = f'{camera_name}_camera/image/compressed'
             self.publisher_ = self.create_publisher(CompressedImage, topic_name, qos_profile)
             self.get_logger().info(f"Publishing COMPRESSED images to: {topic_name}")
         else:
-            topic_name = 'vertical_camera/image/raw'
+            topic_name = f'{camera_name}_camera/image/raw'
             self.publisher_ = self.create_publisher(Image, topic_name, qos_profile)
             self.get_logger().info(f"Publishing RAW images to: {topic_name}")
         
