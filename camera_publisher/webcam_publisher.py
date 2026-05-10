@@ -25,11 +25,11 @@ class WebcamPublisher(Node):
         
         # Create publisher based on parameters
         if self.use_compressed:
-            topic_name = f'{camera_name}_camera/image/compressed'
+            topic_name = f'{camera_name}_camera/compressed'
             self.publisher_ = self.create_publisher(CompressedImage, topic_name, qos_profile)
             self.get_logger().info(f"Publishing COMPRESSED images to: {topic_name}")
         else:
-            topic_name = f'{camera_name}_camera/image/raw'
+            topic_name = f'{camera_name}_camera/raw'
             self.publisher_ = self.create_publisher(Image, topic_name, qos_profile)
             self.get_logger().info(f"Publishing RAW images to: {topic_name}")
         
