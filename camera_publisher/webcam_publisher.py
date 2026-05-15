@@ -12,10 +12,29 @@ class WebcamPublisher(Node):
         # Declare parameters
         self.declare_parameter('camera_name', 'vertical')  # e.g., 'vertical', 'horizontal'
         self.declare_parameter('use_compressed', True)  # False = raw, True = compressed
+        self.declare_parameter('video_source', '/dev/video0')  # Video device path
+        self.declare_parameter('horizontal_flip', False)  # Flip horizontally
+        self.declare_parameter('vertical_flip', False)  # Flip vertically
         
         # Get parameters
         camera_name = self.get_parameter('camera_name').value
         self.use_compressed = self.get_parameter('use_compressed').value
+        video_source = self.get_parameter('video_source').value
+        horizontal_flip = self.get_parameter('horizontal_flip').value
+        vertical_flip = self.get_parameter('vertical_flip').value
+        
+        # Determine flip code
+        if horizontal_flip and vertical_flip:
+            self.flip_code = -1
+        elif horizontal_flip:
+            self.flip_code = 1
+        elif vertical_flip:
+            self.flip_code = 0
+        else:
+            self.flip_code = None
+        video_source = self.get_parameter('video_source').value
+        horizontal_flip = self.get_parameter('horizontal_flip').value
+        vertical_flip = self.get_parameter('vertical_flip').value
         
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -35,7 +54,7 @@ class WebcamPublisher(Node):
         
         self.timer = self.create_timer(0.1, self.timer_callback)
         self.bridge = CvBridge()
-        self.cap = cv2.VideoCapture('/dev/video0', cv2.CAP_V4L)
+        self.cap = cv2.VideoCapture(video_source, cv2.CAP_V4L)
 
     def timer_callback(self):
         ret, frame = self.cap.read()
@@ -56,14 +75,17 @@ class WebcamPublisher(Node):
             # Resize to 800x800
             frame_resized = cv2.resize(frame_cropped, (800, 800))
 
-            # Flip horizontally (mirror image)
-            # frame_flipped = cv2.flip(frame_resized, 1)
+            # Flip based on parameters
+            if self.flip_code is not None:
+                frame_flipped = cv2.flip(frame_resized, self.flip_code)
+            else:
+                frame_flipped = frame_resized
             
             # Convert based on parameter
             if self.use_compressed:
-                msg = self.bridge.cv2_to_compressed_imgmsg(frame_resized)
+                msg = self.bridge.cv2_to_compressed_imgmsg(frame_flipped)
             else:
-                msg = self.bridge.cv2_to_imgmsg(frame_resized, encoding='bgr8')
+                msg = self.bridge.cv2_to_imgmsg(frame_flipped, encoding='bgr8')
 
             msg.header.stamp = self.get_clock().now().to_msg()
             msg.header.frame_id = "camera_frame"
