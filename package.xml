@@ -9,8 +9,16 @@
   <depend>rclpy</depend>
   <depend>sensor_msgs</depend>
   <depend>cv_bridge</depend>
-  <depend>opencv-python</depend>
-  <depend>depthai</depend>
+  <!-- Removido: `opencv-python` nao existe no indice do rosdep, entao o
+       `rosdep install` falhava nesta linha. Alem disso, dependencia de pip
+       agora e pinada por plataforma em env/<perfil>.yaml do evtol-dev, onde
+       da para fixar a VERSAO. Deixar o rosdep instalar uma versao qualquer
+       aqui brigaria com esse pin. -->
+  <!-- Removido: `depthai` nao existe no indice do rosdep, entao o
+       `rosdep install` falhava nesta linha. Alem disso, dependencia de pip
+       agora e pinada por plataforma em env/<perfil>.yaml do evtol-dev, onde
+       da para fixar a VERSAO. Deixar o rosdep instalar uma versao qualquer
+       aqui brigaria com esse pin. -->
 
   <export>
     <build_type>ament_python</build_type>
