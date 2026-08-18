@@ -1,3 +1,5 @@
+from camera_publisher.topicos import nome_do_topico
+
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import CompressedImage
@@ -27,7 +29,11 @@ def gstreamer_pipeline(
 class CameraPublisher(Node):
     def __init__(self):
         super().__init__('camera_publisher')
-        self.publisher_ = self.create_publisher(CompressedImage, 'camera/image/compressed', 10)
+        # O PAPEL da camera no drone, e nao o modelo do hardware.
+        self.declare_parameter('camera_name', 'vertical')
+        topic_name = nome_do_topico(self.get_parameter('camera_name').value, True)
+        self.publisher_ = self.create_publisher(CompressedImage, topic_name, 10)
+        self.get_logger().info(f"Publicando em: {topic_name} (comprimido)")
         self.timer = self.create_timer(0.1, self.timer_callback)
         self.bridge = CvBridge()
         # Initialize the video capture with gstreamer pipeline

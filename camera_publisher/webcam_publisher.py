@@ -1,3 +1,5 @@
+from camera_publisher.topicos import nome_do_topico
+
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
@@ -61,14 +63,12 @@ class WebcamPublisher(Node):
             depth=10,
         )
 
-        if self.use_compressed:
-            topic_name = f'{camera_name}_camera/compressed'
-            self.publisher_ = self.create_publisher(CompressedImage, topic_name, qos_profile)
-            self.get_logger().info(f"Publishing COMPRESSED images to: {topic_name}")
-        else:
-            topic_name = f'{camera_name}_camera/raw'
-            self.publisher_ = self.create_publisher(Image, topic_name, qos_profile)
-            self.get_logger().info(f"Publishing RAW images to: {topic_name}")
+        topic_name = nome_do_topico(camera_name, self.use_compressed)
+        tipo = CompressedImage if self.use_compressed else Image
+        self.publisher_ = self.create_publisher(tipo, topic_name, qos_profile)
+        self.get_logger().info(
+            f"Publicando em: {topic_name} "
+            f"({'comprimido' if self.use_compressed else 'cru'})")
 
         self.get_logger().info(
             f"Camera config: size={self.frame_width}x{self.frame_height} "

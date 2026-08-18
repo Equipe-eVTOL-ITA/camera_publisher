@@ -1,3 +1,5 @@
+from camera_publisher.topicos import nome_do_topico
+
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
@@ -11,9 +13,14 @@ class CameraPublisher(Node):
         
         # Declare parameters
         self.declare_parameter('use_compressed', False)  # False = raw, True = compressed
-        
+        # O PAPEL da camera no drone, e nao o modelo do hardware. Trocar uma
+        # Raspberry Pi Camera por uma webcam na mesma posicao nao pode mudar o
+        # topico -- senao todo config que o consome quebra em silencio.
+        self.declare_parameter('camera_name', 'vertical')
+
         # Get parameters
         self.use_compressed = self.get_parameter('use_compressed').value
+        camera_name = self.get_parameter('camera_name').value
         
         qos_profile = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -21,13 +28,12 @@ class CameraPublisher(Node):
             depth=10,
         )
         
-        # Create publisher based on parameter
-        if self.use_compressed:
-            self.publisher_ = self.create_publisher(CompressedImage, 'vertical_camera/image/compressed', qos_profile)
-            self.get_logger().info(f"Publishing COMPRESSED images to: vertical_camera/image/compressed")
-        else:
-            self.publisher_ = self.create_publisher(Image, 'vertical_camera/image/raw', qos_profile)
-            self.get_logger().info(f"Publishing RAW images to: vertical_camera/image/raw")
+        topic_name = nome_do_topico(camera_name, self.use_compressed)
+        tipo = CompressedImage if self.use_compressed else Image
+        self.publisher_ = self.create_publisher(tipo, topic_name, qos_profile)
+        self.get_logger().info(
+            f"Publicando em: {topic_name} "
+            f"({'comprimido' if self.use_compressed else 'cru'})")
         
         self.timer = self.create_timer(0.1, self.timer_callback)
         self.bridge = CvBridge()
