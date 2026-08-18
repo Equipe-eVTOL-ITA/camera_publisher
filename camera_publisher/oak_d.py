@@ -1,3 +1,5 @@
+from camera_publisher.topicos import nome_do_topico
+
 import rclpy
 from rclpy.node import Node
 from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy
@@ -43,12 +45,20 @@ class OakRGBPublisher(Node):
             depth=10,
         )
         
-        # Create publishers based on parameters
+        # O PAPEL da camera no drone, e nao o modelo do hardware.
+        self.declare_parameter('camera_name', 'vertical')
+        camera_name = self.get_parameter('camera_name').value
+
         if self.publish_raw:
-            self.raw_publisher = self.create_publisher(Image, 'camera/image/raw', qos_profile)
-        
+            topico_cru = nome_do_topico(camera_name, False)
+            self.raw_publisher = self.create_publisher(Image, topico_cru, qos_profile)
+            self.get_logger().info(f"Publicando em: {topico_cru} (cru)")
+
         if self.publish_compressed:
-            self.compressed_publisher = self.create_publisher(CompressedImage, 'camera/image/compressed', qos_profile)
+            topico_comp = nome_do_topico(camera_name, True)
+            self.compressed_publisher = self.create_publisher(
+                CompressedImage, topico_comp, qos_profile)
+            self.get_logger().info(f"Publicando em: {topico_comp} (comprimido)")
             
         # Timer frequency based on FPS parameter
         timer_period = 1.0 / float(self.fps)
