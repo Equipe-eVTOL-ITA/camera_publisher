@@ -46,7 +46,7 @@ class OakRGBPublisher(Node):
         )
         
         # O PAPEL da camera no drone, e nao o modelo do hardware.
-        self.declare_parameter('camera_name', 'vertical')
+        self.declare_parameter('camera_name', 'frontal')
         camera_name = self.get_parameter('camera_name').value
 
         if self.publish_raw:

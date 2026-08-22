@@ -23,7 +23,8 @@ setup(
             'raspicam = camera_publisher.raspicam_publisher:main',
             'webcam = camera_publisher.webcam_publisher:main',
             'oak = camera_publisher.oak_d:main',
-            'jetson = camera_publisher.imx_219:main'
+            'jetson = camera_publisher.imx_219:main',
+            'roi_stream = camera_publisher.roi_stream:main'
         ],
     },
 )
