@@ -43,6 +43,29 @@ confira com `ros2 topic info -v <topico>` antes de armar, e desconfie de
 from __future__ import annotations
 
 
+# >>> CONTRATO topicos.camera
+# O nome do topico de uma camera e:
+#
+#     <papel>_camera/compressed        SEM /image/ NO MEIO
+#     <papel>_camera/raw
+#
+# `papel` e a FUNCAO, nao o hardware: vertical, frontal, horizontal, gesto.
+# Trocar a camera nao pode trocar o topico.
+#
+# POR QUE ISTO ESTA ESCRITO EM LETRA GRANDE
+#
+# Ja houve tres formas em uso ao mesmo tempo -- /camera/image/compressed,
+# /vertical_camera/image/compressed, /vertical_camera/compressed -- e trocar de
+# camera trocava o topico enquanto o detector do outro lado seguia assinando o
+# antigo. Ele sobe, nao reclama, e nunca recebe quadro. A missao voa CEGA e o
+# log nao diz por que.
+#
+# Isso ja aconteceu TRES VEZES neste workspace.
+#
+# Antes de armar:  ros2 topic info -v <topico>
+# e desconfie de "Publisher count: 0".
+# <<< CONTRATO
+
 def nome_do_topico(camera_name: str, comprimido: bool) -> str:
     """
     O topico em que uma camera chamada `camera_name` publica.
