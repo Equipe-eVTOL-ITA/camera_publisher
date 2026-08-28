@@ -21,10 +21,23 @@ class WebcamPublisher(Node):
         self.declare_parameter('horizontal_flip', False)
         self.declare_parameter('vertical_flip', False)
 
+        # Modo de captura pedido ao driver V4L. 0 = nao mexe, aceita o default.
+        # Sem isto o no publicava no que quer que a camera tivesse escolhido no
+        # boot, e camera_width/camera_height do config de visao viravam chute.
+        self.declare_parameter('capture_width', 0)
+        self.declare_parameter('capture_height', 0)
+
         # Telemetry-tunable output size (square center-crop then resize).
         # Lower values reduce telemetry bandwidth significantly.
-        self.declare_parameter('frame_width', 800)
-        self.declare_parameter('frame_height', 800)
+        #
+        # PRECISAM SER IGUAIS. O recorte e para QUADRADO, e quem consome a
+        # imagem (CameraCalibration::fromHorizontalFov) descreve os intrinsecos
+        # com um LADO UNICO, nao com largura e altura. Pedir 640x480 aqui
+        # esticava o recorte 1,33x na horizontal e deixava o centro optico
+        # calculado em 240 quando o real era 320 -- sem erro nenhum a jusante.
+        # Ver a checagem logo abaixo.
+        self.declare_parameter('frame_width', 640)
+        self.declare_parameter('frame_height', 640)
 
         # Telemetry-tunable publish rate (Hz). Lower => less bandwidth.
         self.declare_parameter('publish_rate', 10.0)
@@ -37,10 +50,21 @@ class WebcamPublisher(Node):
         video_source = self.get_parameter('video_source').value
         horizontal_flip = bool(self.get_parameter('horizontal_flip').value)
         vertical_flip = bool(self.get_parameter('vertical_flip').value)
+        capture_width = int(self.get_parameter('capture_width').value)
+        capture_height = int(self.get_parameter('capture_height').value)
         self.frame_width = int(self.get_parameter('frame_width').value)
         self.frame_height = int(self.get_parameter('frame_height').value)
         publish_rate = float(self.get_parameter('publish_rate').value)
         self.jpeg_quality = int(self.get_parameter('jpeg_quality').value)
+
+        # Melhor falhar aqui, na subida, do que em voo: imagem esticada nao
+        # aparece como falha, aparece como o drone alinhando ao lado da base.
+        if self.frame_width != self.frame_height:
+            raise ValueError(
+                f'frame_width ({self.frame_width}) != frame_height '
+                f'({self.frame_height}): o recorte e para QUADRADO e os '
+                f'intrinsecos a jusante supoem um lado unico. Redimensionar '
+                f'para retangulo estica a imagem e desloca o centro optico.')
 
         if publish_rate <= 0.0:
             self.get_logger().warn(
@@ -77,6 +101,37 @@ class WebcamPublisher(Node):
         self.timer = self.create_timer(timer_period, self.timer_callback)
         self.bridge = CvBridge()
         self.cap = cv2.VideoCapture(video_source, cv2.CAP_V4L)
+
+        # O driver pode NEGAR o modo pedido e entregar outro sem avisar, entao
+        # o que vale e ler de volta o que ficou. E esse numero que precisa
+        # estar em camera_width/camera_height do config de visao.
+        if capture_width > 0 and capture_height > 0:
+            self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, capture_width)
+            self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, capture_height)
+
+        efetiva_w = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        efetiva_h = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        pedido = (f'{capture_width}x{capture_height}' if capture_width > 0
+                  else 'default do driver')
+        self.get_logger().info(
+            f'Captura efetiva: {efetiva_w}x{efetiva_h} (pedido: {pedido})')
+
+        if capture_width > 0 and (efetiva_w, efetiva_h) != (capture_width, capture_height):
+            self.get_logger().warn(
+                f'O driver NEGOU {capture_width}x{capture_height} e entregou '
+                f'{efetiva_w}x{efetiva_h}. Atualize camera_width/camera_height '
+                f'no config de visao para {efetiva_w}/{efetiva_h}, senao os '
+                f'intrinsecos descrevem uma imagem que nao existe.')
+
+        # Recorte menor que a saida e so ampliacao: nao cria detalhe, custa
+        # banda e engana quem le o topico.
+        lado_do_recorte = min(efetiva_w, efetiva_h)
+        if lado_do_recorte > 0 and self.frame_width > lado_do_recorte:
+            self.get_logger().warn(
+                f'Publicando {self.frame_width}x{self.frame_width} a partir de '
+                f'um recorte de {lado_do_recorte}x{lado_do_recorte}: e '
+                f'ampliacao, nao detalhe. Para ganhar resolucao real, use um '
+                f'modo de captura cuja MENOR dimensao seja >= {self.frame_width}.')
 
     def timer_callback(self):
         ret, frame = self.cap.read()
